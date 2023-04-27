@@ -1,0 +1,10 @@
+# https://pyimagesearch.com/2017/03/27/how-to-install-dlib/
+dlib
+numpy
+torch
+opencv-python
+h5py
+pathlib
+facenet-pytorch
+scikit-learn
+pyheif
