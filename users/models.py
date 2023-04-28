@@ -48,7 +48,9 @@ data=[["LALIT YADAV","B.Tech.","Data Science & Artificial Intelligence","22BDS03
 ["NITHISH CHOUTI","B.Tech.","Computer Science & Engineering","21BCS074","Ramesh CHOUTI","02-May-2003","9493865924","O+","Jul-25","7995466264"],
 ["DUNGAVATH SANTHOSH NAIK","B.Tech.","Computer Science & Engineering","21BCS036","Dungavath Ramu Naik","06-Apr-2003","6300293214","O+","Jul-25","8106994833"],
 ["AMBALLA VENKATA SRI RAM","B.Tech.","Computer Science & Engineering","21BCS008","Amballa Venkata Ram Rao","19-Sep-2003","7075023539","B-","Jul-25","9849211471"]]
+
 class customUser(AbstractUser):
+
     email = models.EmailField(unique=True)
     user_type_data=((1,'admin'),(2,'security'),(3,'student'),(4,'staff'),)
     user_type=models.CharField(default=1,choices=user_type_data,max_length=100)
@@ -63,6 +65,7 @@ class student_profile(models.Model):
     emergency_phone_no=models.CharField(max_length=100)
     gender=models.CharField(max_length=100,default="male")
     profile_pic=models.FileField(max_length=400,default="media/default.jpg")
+    room_no=models.CharField(default="342",max_length=10)
     ban=models.BooleanField(null=True,blank=True,default=False)
     objects=models.Manager()
     admin=models.OneToOneField(customUser,on_delete=models.CASCADE)

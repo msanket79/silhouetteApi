@@ -23,6 +23,7 @@ class staff_profile(models.Model):
     profile_pic=models.FileField(max_length=400,default='media/default.jpg')
     phone_no=models.CharField(max_length=100)
     Permission_level=models.CharField(max_length=50)
+    gender=models.CharField(default="female", max_length=50)
     students=models.ManyToManyField(student_profile)
     admin=models.OneToOneField(customUser,on_delete=models.CASCADE)
 

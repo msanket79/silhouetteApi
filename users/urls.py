@@ -10,10 +10,6 @@ urlpatterns=[
     path('authenticated/',views.checkAuthenticated.as_view(),name="authenticated"),
 
 
-
-
-
-
     # admin urls
     path('admin_profile/',AdminViews.GetAdminProfileView.as_view(),name="admin_profile"),
     path('manage_student/',AdminViews.ManageStudents.as_view(),name="manage_students"),
@@ -25,6 +21,7 @@ urlpatterns=[
     path('create_student/',AdminViews.UserAndStudentProfileCreate.as_view(),name="create_student"),
     path('delete_student/',AdminViews.DeleteStudent.as_view(),name="delete_student"),
     path('delete_security/',AdminViews.DeleteSecurity.as_view(),name="delete_security"),
+    path('bulk_student_registration/',AdminViews.BulkStudentRegistration.as_view(),name="bulk_student_registration"),
 
 
 
@@ -36,6 +33,7 @@ urlpatterns=[
 
     #admin page-staff related
     path('create_staff/',AdminViews.UserAndStaffProfileCreate.as_view(),name="create_staff"),
+    path('add_students_for_outpass/',AdminViews.AddStudentsForOutpass.as_view(),name="add_students_for_outpass"),
 
 
     #admin urls entry exit related data
@@ -61,6 +59,10 @@ urlpatterns=[
     #staff page--------------------------------------------------------->
     path('outpass_requests/',StaffViews.outpass_requests.as_view(),name="outpass_requests"),
     path('staff_profile/',StaffViews.StaffProfileView.as_view(),name="staff_profile"),
+    path('outpasses_approved/',StaffViews.OutpassesApproved.as_view(),name="outpasses_approved"),
+    path('outpass_students_out/',StaffViews.OutpassStudentsOut.as_view(),name="outpass_students_out"),
+    path('students_under_staff/',StaffViews.StudentsUnderStaff.as_view(),name="students_under_staff"),
+
 
 
 

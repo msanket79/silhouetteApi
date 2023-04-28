@@ -15,21 +15,34 @@ import requests
 
 
 
+
+
 import facial_classification as fc
 classifier=fc.classifier()
 
+
+
+# this is a security profile 
 class SecurityProfileView(APIView):
     def get(self,request,format=None):
         user=request.user
         security=security_profile.objects.get(admin=user)
         security=SecurityProfileSerializer(security).data
         return Response(security)
+    
+#this is the listofstudents out
 class ListOfStudentsOutSerializer(APIView):
     def get(self,request,format=None):
         entryexitdetails=entry_exit.objects.filter(entry_time__isnull=True).filter(outpass__isnull=True)
         entryexitdetails=EntryExitDetailsSerializer(entryexitdetails,many=True).data
         return Response(entryexitdetails)
 
+
+# this is used to do face entry and manual entry with differnt post parameters
+
+# if entry_type==manual then it will used for manual entry
+# if entry_type==face_accept then we have showed the details of the student after successfull recognition and then user is clicking sumbit
+# else it will process recieve the 10 images and will process it 
 class direct_entry(APIView):
     def post(self,request,format=None):
         entry_type=request.data['entry_type']
@@ -98,6 +111,9 @@ class direct_entry(APIView):
         except:
                 return Response({'error':'not valid student'})
 
+
+
+# this is the page will appear when the student want to exit adn he has outpass in his name and it will ask direct or outpass
 class direct_or_outpass(APIView):
     def post(self,request,format=None):
         roll_no=request.data["roll_no"].upper()
