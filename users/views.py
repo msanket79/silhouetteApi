@@ -11,7 +11,8 @@ from django.contrib.auth import login,logout
 from django.http import JsonResponse
 from rest_framework.authtoken.models import Token
 from rest_framework import status
-
+import json
+from .models import student_profile
 # Create your views here.
 
 
@@ -61,25 +62,26 @@ class LoginView(APIView):
 
             #if user is staff
             if user.user_type=="4":
-                if user.staff_profile.Permission_level=="fa":
-                    data['staff']="fa"
-                if user.staff_profile.Permission_level=="warden":
-                    data['staff']="warden"
-                else:
-                    data['staff']="swc"
-
-
+                array=[]
+                if user.staff_profile.fa:
+                    array.append("fa")
+                if user.staff_profile.warden:
+                    array.append("warden")
+                if user.staff_profile.swc:
+                    array.append("swc")
+                data['curr_role']=user.staff_profile.role
+                data['staff']=array
             return Response(data)
         else:
             return Response({'error':'Error Authentication'})
         
-class LogoutView(APIView):
-
+class LogoutView(APIView):  
     def post(self, request):
         try:
             request.user.auth_token.delete()
             return Response({"message": "Logout successful"}, status=status.HTTP_200_OK)
-        except:
+        except Exception as e:
+            print(e)
             return Response({'error':'logout error'})
 
 # class LogoutView(APIView):
@@ -107,5 +109,26 @@ class change_password(APIView):
         else:
             return Response({"error":"Please enter the correct password"})
         
+
+class SwitchStaffRole(APIView):
+    def post(self,request,format=None):
+        data=request.data['access']
+        data=data.split(",")
+        curr_role=request.user.staff_profile.role
+        role_list=['swc','fa','warden']
+        print(type(data))
+        print(data)
+        print(curr_role)
+        if (data[0] in role_list) and (data[1] in role_list): 
+            if data[0]==curr_role:
+                request.user.staff_profile.role=data[1]
+            else:
+                request.user.staff_profile.role=data[0]
+            request.user.staff_profile.save()
+            print(request.user.staff_profile.role)
+            return Response({'success':'switched to'+str(request.user.staff_profile.role)})
+        else:
+            return Response({'error':'wrong roles'})
+            
 
 

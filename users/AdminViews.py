@@ -201,16 +201,26 @@ class AddStudentsForOutpass(APIView):
         elif students=="female":
             students1=student_profile.objects.filter(gender="female")
             print("female")
-        else: 
+        else:
             students1=request.data.getlist('students')
             # print(students_list)
-        if request.data['id']:
+        if request.data.get('id'):
             staff_id=request.data['id']
         else:
             staff_id=request.user.staff_profile.id
         staff=staff_profile.objects.get(id=staff_id)
-        staff.students.add(*students1)
+        if request.data.get('staff_type'):
+            staff_type=request.data.get('staff_type')
+        else:
+            staff_type=staff.role
+        if staff_type=="swc":
+            staff.students_swc.add(*students1)
+        elif staff_type=="fa":
+            staff.students_fa.add(*students1)
+        else:
+            staff.students_warden.add(*students1)  
         return Response({'success':'students addded'})
+
 
 class BulkStudentRegistration(APIView):
     def post(self,request,format=None):

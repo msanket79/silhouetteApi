@@ -13,8 +13,33 @@ from rest_framework.decorators import api_view
 from django.urls import reverse
 import requests
 
+from django.conf import settings
 
+media_root = settings.MEDIA_ROOT
 
+from time import time
+import base64
+import os
+
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+
+def save_base64_image(base64_string, folder):
+    # Decode base64 data
+    format, imgstr = base64_string.split(';base64,')
+    ext = format.split('/')[-1]
+    data = ContentFile(base64.b64decode(imgstr))
+
+    # Generate unique filename
+    filename = os.path.join(folder, f"myphoto.{ext}")
+    if default_storage.exists(filename):
+        print('it exists')
+        default_storage.delete(filename)
+    # Save the file in Django's media folder
+    path = default_storage.save(filename, data)
+
+    # Return the file path
+    return default_storage.url(path)+f'?t={int(time())}'
 
 
 import facial_classification as fc
@@ -47,7 +72,14 @@ class direct_entry(APIView):
     def post(self,request,format=None):
         entry_type=request.data['entry_type']
         if entry_type=="manual":
+            print("manual me aaya")
             roll_no=request.POST["roll_no"].upper()
+            try:
+                student=student_profile.objects.get(roll_no=roll_no)
+                student=ScannedStudentSerializer(student).data
+                return Response(student)
+            except:
+                return Response({'error':'student not in db'})
         elif entry_type=="face_accept":
             roll_no=request.POST["roll_no"].upper()
         else:
@@ -58,8 +90,13 @@ class direct_entry(APIView):
                 try:
                     student=student_profile.objects.get(roll_no=labels[0].upper())
                     student=ScannedStudentSerializer(student).data
+                    response=student
+                    response['image']=save_base64_image(images[2],media_root)
+                    print(response)
                     return Response(student)
-                except:
+                except Exception as e:
+                    
+                    print(e)
                     return Response({'error':'student not in db'})
             else:
                 return Response({'error':'no student is recognised'})
@@ -68,9 +105,8 @@ class direct_entry(APIView):
             student=student_profile.objects.get(roll_no=roll_no)
 
             entryexit=entry_exit.objects.filter(roll_no=student).filter(entry_time__isnull=True).first()
-            query=(Q(roll_no=student) & Q(approved=True) & ~Q(used = True) & Q(From=datetime.date.today()+datetime.timedelta(hours=5,minutes=30)))
+            query=(Q(roll_no=student) & Q(approved=True) & ~Q(used = True) & Q(From=datetime.datetime.now()+datetime.timedelta(hours=5,minutes=30)))
             outpass=Outpass.objects.filter(query).first()
-
 
 
             # agar student bahar hai with outpass

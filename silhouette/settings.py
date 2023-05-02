@@ -84,7 +84,7 @@ WSGI_APPLICATION = 'silhouette.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'silhouettedemo',
+        'NAME': 'silhouettedemo1',
         'USER':'postgres',
         'PASSWORD':'root',
         'HOST':'localhost',

@@ -45,7 +45,7 @@ class UnbanRequestsSerializer(serializers.ModelSerializer):
 class CreateStudentSerializer(serializers.ModelSerializer):
     email=serializers.EmailField(source='admin.email')
     password=serializers.CharField(source='admin.password')
-    profile_pic=serializers.ImageField(max_length=None,use_url=True)
+    profile_pic=serializers.ImageField(max_length=None,use_url=True,required=False)
     class Meta:
         model=student_profile
         fields=['email','password','name','roll_no','father','phone_no','emergency_phone_no','gender','profile_pic','room_no']
@@ -60,12 +60,12 @@ class CreateStudentSerializer(serializers.ModelSerializer):
             )
         except:
             raise serializers.ValidationError('User already exists', code='error')
-
-        profile_pic=validated_data.pop('profile_pic')
         student_profile1=student_profile.objects.create(
             admin=user,**validated_data
         )
-        student_profile1.profile_pic=profile_pic
+        if validated_data.get('profile_pic'):
+            profile_pic=validated_data.pop('profile_pic')
+            student_profile1.profile_pic=profile_pic
         student_profile1.save()
         return student_profile1
     def to_internal_value(self, data):
@@ -116,12 +116,13 @@ class UpdateStudentSerializer(serializers.ModelSerializer):
 class CreateSecuritySerializer(serializers.ModelSerializer):
     email=serializers.CharField(source='admin.email')
     password=serializers.CharField(source='admin.password')
-    profile_pic=serializers.ImageField(max_length=None,use_url=True)
+    profile_pic=serializers.ImageField(max_length=None,use_url=True,required=False)
     class Meta:
         model=security_profile
         fields=['email','password','name','phone_no','profile_pic']
     def create(self,validated_data):
         user_data=validated_data.pop('admin')
+        print("andar ghus chuka security creation ke")
         try:
             user=customUser.objects.create_user(
                 username=user_data['email'],
@@ -129,12 +130,19 @@ class CreateSecuritySerializer(serializers.ModelSerializer):
                 password=user_data['password'],
                 user_type='2'
             )
+            print("user created")
         except:
+            print("fail ho cuka hu")
             raise serializers.ValidationError('User already exists', code='error')
-        profile_pic=validated_data.pop('profile_pic')
+        print("security create karne jaa raha hu")
         security_profile1=security_profile.objects.create(admin=user,**validated_data)
-        security_profile1.profile_pic=profile_pic
+        print("create kar chuka hu")
+        if validated_data.get('profile_pic'):
+            profile_pic=validated_data.pop('profile_pic')
+            security_profile1.profile_pic=profile_pic
+        print("photo daaal di hai")
         security_profile1.save()
+        
         return security_profile1
     def to_internal_value(self, data):
         try:
@@ -186,9 +194,12 @@ class CreateStaffSerializer(serializers.ModelSerializer):
     email=serializers.CharField(source='admin.email')
     password=serializers.CharField(source='admin.password')
     profile_pic=serializers.ImageField(max_length=None,use_url=True,required=False)
+    swc = serializers.CharField(required=False)
+    warden = serializers.CharField(required=False)
+    fa = serializers.CharField(required=False)
     class Meta:
         model=staff_profile
-        fields=['email','password','profile_pic','name','phone_no','Permission_level','gender']
+        fields=['email','password','profile_pic','name','phone_no','gender','swc','warden','fa']
     def create(self,validated_data):
         print(validated_data)
         user_data=validated_data.pop('admin')
@@ -201,7 +212,38 @@ class CreateStaffSerializer(serializers.ModelSerializer):
             )
         except:
             raise serializers.ValidationError('User already exists', code='error')
+        swc=False
+        warden=False
+        fa=False
+        role="fa"
+        if validated_data.get('swc'):
+            print('swc get kia hai aur swc ko true kia')
+            role="swc"
+            swc=True
+            validated_data.pop('swc')
+        if validated_data.get('warden'):
+            print('warden get kia hai aur warden ko true kia')
+            role="warden"
+            warden=True
+            validated_data.pop('warden')
+        if validated_data.get('fa'):
+            print('fa get kia hai aur fa ko true kia')
+            role="fa"
+            fa=True
+            validated_data.pop('fa')
+
         staff_profile1=staff_profile.objects.create(admin=user,**validated_data)
+        print(swc)
+        if swc:
+            staff_profile1.swc=True
+        print(warden)
+        if warden:
+            staff_profile1.warden=True
+        print(fa)
+        if fa:
+            staff_profile1.fa=True
+        staff_profile1.role=role
+        print(role)
         if validated_data.get('profile_pic'):
             profile_pic=validated_data.pop('profile_pic')
             staff_profile1.profile_pic=profile_pic
@@ -220,10 +262,13 @@ class UpdateStaffSerializer(serializers.ModelSerializer):
     email = serializers.CharField(source='admin.email')
     password = serializers.CharField(source='admin.password')
     profile_pic = serializers.ImageField(max_length=None, use_url=True)
+    swc = serializers.CharField(required=False)
+    warden = serializers.CharField(required=False)
+    fa = serializers.CharField(required=False)
 
     class Meta:
         model = staff_profile
-        fields = ['email', 'password', 'profile_pic', 'name', 'phone_no','Permission_level']
+        fields = ['email', 'password', 'profile_pic', 'name', 'phone_no','role','gender','warden','fa','swc']
 
     def update(self, instance, validated_data):
         # Update the user email and password
@@ -233,9 +278,28 @@ class UpdateStaffSerializer(serializers.ModelSerializer):
             user.email = user_data.get('email', user.email)
             user.set_password(user_data.get('password', user.password))
             user.save()
-
+            swc=False
+            warden=False
+            fa=False
+            role="fa"
+            if validated_data.get('swc'):
+                role="swc"
+                swc=True
+                validated_data.pop('swc')
+            if validated_data.get('warden'):
+                role="warden"
+                warden=True
+                validated_data.pop('warden')
+            if validated_data.get('fa'):
+                role="fa"
+                fa=True
+                validated_data.pop('fa')
             # Update the staff profile fields
+            instance.fa=validated_data.get('fa',instance.fa)
+            instance.warden=validated_data.get('fa',instance.warden)
+            instance.swc=validated_data.get('fa',instance.swc)
             instance.name = validated_data.get('name', instance.name)
+            instance.gender=validated_data.get('gender',instance.gender)
             instance.phone_no = validated_data.get('phone_no', instance.phone_no)
             instance.profile_pic = validated_data.get('profile_pic', instance.profile_pic)
             instance.save()
@@ -293,7 +357,7 @@ class StaffProfileSerializer(serializers.ModelSerializer):
     profile_pic=serializers.ImageField()
     class Meta:
         model=staff_profile
-        fields=['name','phone_no','profile_pic','Permission_level','email']
+        fields=['name','phone_no','profile_pic','role','email']
 
 
 

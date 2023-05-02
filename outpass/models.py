@@ -22,9 +22,14 @@ class staff_profile(models.Model):
     name=models.CharField(max_length=200)
     profile_pic=models.FileField(max_length=400,default='media/default.jpg')
     phone_no=models.CharField(max_length=100)
-    Permission_level=models.CharField(max_length=50)
+    fa=models.BooleanField(default=False)
+    warden=models.BooleanField(default=False)
+    swc=models.BooleanField(default=False)
+    role=models.CharField(max_length=50,null=True,blank=True)
     gender=models.CharField(default="female", max_length=50)
-    students=models.ManyToManyField(student_profile)
+    students_fa=models.ManyToManyField(student_profile,related_name='staff_profiles_fa')
+    students_swc=models.ManyToManyField(student_profile,related_name='staff_profiles_swc')
+    students_warden=models.ManyToManyField(student_profile,related_name='staff_profiles_warden')
     admin=models.OneToOneField(customUser,on_delete=models.CASCADE)
 
 

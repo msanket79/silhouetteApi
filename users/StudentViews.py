@@ -34,6 +34,7 @@ class apply_outpass(APIView):
 
             #if chuttiya is greater than 10 set the swc flag to None
             gap=to_date-from_date
+            print(gap)
             if datetime.timedelta(days=10)<=gap:
                 outpass.swc_approval=None
                 print(outpass.swc_approval)

@@ -1,15 +1,23 @@
 from django.urls import path
 from . import views,AdminViews,StudentViews,StaffViews,SecurityViews
-
-
+from.models import student_profile
+from django.shortcuts import render
+from django.http import HttpResponse
+def demo(request):
+    if request.method=="POST":
+        student=student_profile.objects.get(id=1)
+        student.profile_pic=request.FILES['photo']
+        student.save()
+        return HttpResponse("success")
+    else:
+        return render(request,'users/index.html')
 urlpatterns=[
     path('',views.LoginView.as_view(),name="login"),
-    
+    path('demo/',demo,name="demo"),
     path('logout/',views.LogoutView.as_view(),name="logout"),
     path('change_password/',views.change_password.as_view(),name="change_password"),
     path('authenticated/',views.checkAuthenticated.as_view(),name="authenticated"),
-
-
+    path('switch_staff_role/',views.SwitchStaffRole.as_view(),name="switch_staff_role"),
     # admin urls
     path('admin_profile/',AdminViews.GetAdminProfileView.as_view(),name="admin_profile"),
     path('manage_student/',AdminViews.ManageStudents.as_view(),name="manage_students"),
@@ -33,7 +41,7 @@ urlpatterns=[
 
     #admin page-staff related
     path('create_staff/',AdminViews.UserAndStaffProfileCreate.as_view(),name="create_staff"),
-    path('add_students_for_outpass/',AdminViews.AddStudentsForOutpass.as_view(),name="add_students_for_outpass"),
+    path('add_students_for_outpass/',AdminViews.AddStudentsForOutpass.as_view(),name="add_students_for_swc"),
 
 
     #admin urls entry exit related data

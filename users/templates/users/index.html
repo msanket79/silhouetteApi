@@ -14,9 +14,14 @@
     <script defer="defer" src="{% static 'react/static/js/main.ec3c12c8.js' %}"></script>
     <link href="{% static 'react/static/css/main.cdd38253.css' %}" rel="stylesheet">
 </head>
-
-<body><noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-</body>
+    <body>
+        <form action="{% url 'demo' %}" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="file" name="photo">
+          <div class="card-footer">
+            <button type="submit" class="btn btn-primary">Submit</button>
+          </div>
+        </form>
+    </body>
 
 </html>
