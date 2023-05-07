@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'django_crontab',
     'corsheaders',
     'users',
     'outpass'
@@ -118,11 +119,14 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+USE_TZ = True
+
+TIME_ZONE = 'Asia/Kolkata'
+
+
 
 USE_I18N = True
 
-USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
@@ -156,3 +160,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL='users.customUser'
 AUTHENTICATION_BACKENDS=['users.EmailBackend.EmailBackend']
 DATA_UPLOAD_MAX_MEMORY_SIZE = 64 * 1024 * 1024
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER='igragnar79@gmail.com'
+EMAIL_HOST_PASSWORD='mefniingagffrdmg'
+EMAIL_USE_SSL=False
+

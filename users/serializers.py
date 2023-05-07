@@ -28,9 +28,15 @@ class EntryExitDetailsSerializer(serializers.ModelSerializer):
 
 
 class ManageStudentsSerializer(serializers.ModelSerializer):
+    email=serializers.EmailField(source="admin.email")
     class Meta:
         model=student_profile
-        fields=['name','roll_no','father','phone_no','emergency_phone_no','gender','ban','id']
+        fields=['name','roll_no','father','phone_no','emergency_phone_no','gender','ban','id','email']
+class ManageStaffsSerializer(serializers.ModelSerializer):
+    email=serializers.EmailField(source="admin.email")
+    class Meta:
+        model=staff_profile
+        fields=['name','phone_no','fa','warden','swc','id','email']
 class ManageSecuritySerializer(serializers.ModelSerializer):
     class Meta:
         model=security_profile
@@ -42,9 +48,9 @@ class UnbanRequestsSerializer(serializers.ModelSerializer):
         model=student_profile
         fields=['roll_no','name','reason','phone_no']
 
-class CreateStudentSerializer(serializers.ModelSerializer):
+class StudentSerializer(serializers.ModelSerializer):
     email=serializers.EmailField(source='admin.email')
-    password=serializers.CharField(source='admin.password')
+    password=serializers.CharField(source='admin.password',write_only=True,required=False)
     profile_pic=serializers.ImageField(max_length=None,use_url=True,required=False)
     class Meta:
         model=student_profile
@@ -68,27 +74,11 @@ class CreateStudentSerializer(serializers.ModelSerializer):
             student_profile1.profile_pic=profile_pic
         student_profile1.save()
         return student_profile1
-    def to_internal_value(self, data):
-        try:
-            return super().to_internal_value(data)
-        except serializers.ValidationError as exc:
-            errors = {}
-            for field, error_list in exc.detail.items():
-                errors['error'] = errors.get('error', []) + error_list
-            raise serializers.ValidationError(errors)
-        
-
-class UpdateStudentSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(source='admin.email')
-    password = serializers.CharField(source='admin.password')
-    profile_pic = serializers.ImageField(max_length=None, use_url=True)
-    class Meta:
-        model = student_profile
-        fields = ['email', 'password', 'name', 'roll_no', 'father', 'phone_no', 'emergency_phone_no', 'gender', 'profile_pic']
 
     def update(self, instance, validated_data):
         user_data = validated_data.pop('admin')
         user = instance.admin
+        print(validated_data)
         try:
             if user_data.get('email'):
                 user.email = user_data['email']
@@ -97,12 +87,12 @@ class UpdateStudentSerializer(serializers.ModelSerializer):
                 user.set_password(user_data['password'])
 
             user.save()
-
             if validated_data.get('profile_pic'):
                 instance.profile_pic = validated_data['profile_pic']
 
             instance.name = validated_data.get('name', instance.name)
             instance.roll_no = validated_data.get('roll_no', instance.roll_no)
+            instance.room_no = validated_data.get('roll_no', instance.room_no)
             instance.father = validated_data.get('father', instance.father)
             instance.phone_no = validated_data.get('phone_no', instance.phone_no)
             instance.emergency_phone_no = validated_data.get('emergency_phone_no', instance.emergency_phone_no)
@@ -112,38 +102,7 @@ class UpdateStudentSerializer(serializers.ModelSerializer):
         except:
             raise serializers.ValidationError('some error occured', code='error')
         return instance
-
-class CreateSecuritySerializer(serializers.ModelSerializer):
-    email=serializers.CharField(source='admin.email')
-    password=serializers.CharField(source='admin.password')
-    profile_pic=serializers.ImageField(max_length=None,use_url=True,required=False)
-    class Meta:
-        model=security_profile
-        fields=['email','password','name','phone_no','profile_pic']
-    def create(self,validated_data):
-        user_data=validated_data.pop('admin')
-        print("andar ghus chuka security creation ke")
-        try:
-            user=customUser.objects.create_user(
-                username=user_data['email'],
-                email=user_data['email'],
-                password=user_data['password'],
-                user_type='2'
-            )
-            print("user created")
-        except:
-            print("fail ho cuka hu")
-            raise serializers.ValidationError('User already exists', code='error')
-        print("security create karne jaa raha hu")
-        security_profile1=security_profile.objects.create(admin=user,**validated_data)
-        print("create kar chuka hu")
-        if validated_data.get('profile_pic'):
-            profile_pic=validated_data.pop('profile_pic')
-            security_profile1.profile_pic=profile_pic
-        print("photo daaal di hai")
-        security_profile1.save()
-        
-        return security_profile1
+    
     def to_internal_value(self, data):
         try:
             return super().to_internal_value(data)
@@ -153,15 +112,35 @@ class CreateSecuritySerializer(serializers.ModelSerializer):
                 errors['error'] = errors.get('error', []) + error_list
             raise serializers.ValidationError(errors)
 
-class UpdateSecuritySerializer(serializers.ModelSerializer):
-    email = serializers.CharField(source='admin.email')
-    password = serializers.CharField(source='admin.password')
-    profile_pic = serializers.ImageField(max_length=None, use_url=True)
+        
 
+
+
+class SecuritySerializer(serializers.ModelSerializer):
+    email=serializers.CharField(source='admin.email')
+    password=serializers.CharField(source='admin.password',write_only=True)
+    profile_pic=serializers.ImageField(max_length=None,use_url=True,required=False)
     class Meta:
-        model = security_profile
-        fields = ['email', 'password', 'name', 'phone_no', 'profile_pic']
-
+        model=security_profile
+        fields=['email','password','name','phone_no','profile_pic']
+    def create(self,validated_data):
+        user_data=validated_data.pop('admin')
+        try:
+            user=customUser.objects.create_user(
+                username=user_data['email'],
+                email=user_data['email'],
+                password=user_data['password'],
+                user_type='2'
+            )
+        except:
+            raise serializers.ValidationError('User already exists', code='error')
+        security_profile1=security_profile.objects.create(admin=user,**validated_data)
+        if validated_data.get('profile_pic'):
+            profile_pic=validated_data.pop('profile_pic')
+            security_profile1.profile_pic=profile_pic
+        security_profile1.save()
+        
+        return security_profile1
     def update(self, instance, validated_data):
         # Update the user email and password
         try:
@@ -189,6 +168,7 @@ class UpdateSecuritySerializer(serializers.ModelSerializer):
             for field, error_list in exc.detail.items():
                 errors['error'] = errors.get('error', []) + error_list
             raise serializers.ValidationError(errors)
+
 
 class CreateStaffSerializer(serializers.ModelSerializer):
     email=serializers.CharField(source='admin.email')

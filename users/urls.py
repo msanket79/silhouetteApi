@@ -3,45 +3,66 @@ from . import views,AdminViews,StudentViews,StaffViews,SecurityViews
 from.models import student_profile
 from django.shortcuts import render
 from django.http import HttpResponse
+from django.core.mail import send_mail
+from silhouette.settings import EMAIL_HOST_USER
+# //this is for testing purpose only
+from django.utils import timezone
+import datetime
+from django.core.mail import send_mail
+from silhouette.settings import EMAIL_HOST_USER
+
 def demo(request):
-    if request.method=="POST":
-        student=student_profile.objects.get(id=1)
-        student.profile_pic=request.FILES['photo']
-        student.save()
-        return HttpResponse("success")
-    else:
-        return render(request,'users/index.html')
+    subject = 'Regarding Gardes revaluation'
+    message = '''hey team silhoutte 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    movie kaisa hai popcorn chahiye kya'''
+    from_email = 'your_email@example.com'
+    recipient_list = ['21bcs049@iiitdwd.ac.in','21bcs135@iiitdwd.ac.in']
+    send_mail(subject, message,EMAIL_HOST_USER, recipient_list, fail_silently=False)
+
+    return render(request,'users/index.html')
+    
+
+
+
 urlpatterns=[
     path('',views.LoginView.as_view(),name="login"),
     path('demo/',demo,name="demo"),
     path('logout/',views.LogoutView.as_view(),name="logout"),
     path('change_password/',views.change_password.as_view(),name="change_password"),
     path('authenticated/',views.checkAuthenticated.as_view(),name="authenticated"),
-    path('switch_staff_role/',views.SwitchStaffRole.as_view(),name="switch_staff_role"),
+
     # admin urls
     path('admin_profile/',AdminViews.GetAdminProfileView.as_view(),name="admin_profile"),
     path('manage_student/',AdminViews.ManageStudents.as_view(),name="manage_students"),
+    path('management/student/',AdminViews.UserAndStudentProfileCRUD.as_view(),name="student"),
+    path('management/student/<str:pk>/',AdminViews.UserAndStudentProfileCRUD.as_view(),name="student1"),
+    path('management/security/',AdminViews.UserAndSecurityProfileCRUD.as_view(),name="security"),
+    path('management/security/<str:pk>/',AdminViews.UserAndSecurityProfileCRUD.as_view(),name="security1"),
+    path('management/staff/',AdminViews.UserAndStaffProfileCRUD.as_view(),name="staff"),
+    path('management/staff/<str:pk>/',AdminViews.UserAndStaffProfileCRUD.as_view(),name="staff1"),
+    path('bulk_student_registration/',AdminViews.BulkStudentRegistration.as_view(),name="bulk_student_registration"),
     path('ban_student/',AdminViews.ban_student.as_view(),name="ban_student"),
     path('unban_student/',AdminViews.unban_student.as_view(),name="unban_student"),
     path('manage_security/',AdminViews.ManageSecurity.as_view(),name="manage_security"),
-
-    #amdin page-student related
-    path('create_student/',AdminViews.UserAndStudentProfileCreate.as_view(),name="create_student"),
-    path('delete_student/',AdminViews.DeleteStudent.as_view(),name="delete_student"),
+    path('manage_staff/',AdminViews.ManageStaff.as_view(),name="manage_staff"),
     path('delete_security/',AdminViews.DeleteSecurity.as_view(),name="delete_security"),
-    path('bulk_student_registration/',AdminViews.BulkStudentRegistration.as_view(),name="bulk_student_registration"),
-
-
-
-    #admin page-security related
-    path('create_security/',AdminViews.UserAndSecurityProfileCreate.as_view(),name="create_security"),
-
-
-
-
-    #admin page-staff related
-    path('create_staff/',AdminViews.UserAndStaffProfileCreate.as_view(),name="create_staff"),
     path('add_students_for_outpass/',AdminViews.AddStudentsForOutpass.as_view(),name="add_students_for_swc"),
+
 
 
     #admin urls entry exit related data
@@ -49,10 +70,6 @@ urlpatterns=[
     path('unban_requests/',AdminViews.UnbanRequests.as_view(),name="unban_requests"),
     path('delete_history/',AdminViews.DeleteHistory.as_view(),name="delete_history"),
     path('outpass_exits/',AdminViews.OutpassDetails.as_view(),name="outpass_exits"),
-    # path('unban_student/',AdminViews.UnbanStudent.as_view(),name="unban_student"),
-
-
-
 
 
     # student page-------------------------------------------------->
@@ -70,6 +87,8 @@ urlpatterns=[
     path('outpasses_approved/',StaffViews.OutpassesApproved.as_view(),name="outpasses_approved"),
     path('outpass_students_out/',StaffViews.OutpassStudentsOut.as_view(),name="outpass_students_out"),
     path('students_under_staff/',StaffViews.StudentsUnderStaff.as_view(),name="students_under_staff"),
+    path('switch_staff_role/',StaffViews.SwitchStaffRole.as_view(),name="switch_staff_role"),
+
 
 
 
@@ -80,13 +99,6 @@ urlpatterns=[
     path('direct_entry/',SecurityViews.direct_entry.as_view(),name="direct_entry"),
     path('list_of_students_out/',SecurityViews.ListOfStudentsOutSerializer.as_view(),name='list_of_students_out'),
     path('direct_or_outpass/',SecurityViews.direct_or_outpass.as_view(),name="direct_or_outpass"),
-
-
-
-
-    
-    
-
 
 
 

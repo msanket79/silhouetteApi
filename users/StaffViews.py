@@ -1,17 +1,16 @@
-from django.shortcuts import render
 from rest_framework.views import APIView
-from rest_framework import permissions
 from rest_framework.response import Response
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import ensure_csrf_cookie,csrf_exempt,csrf_protect
-from django.contrib.auth.models import User
-from django.contrib import auth
 from outpass.models import staff_profile,Outpass
-from .serializers import AdminProfileSerializer,OutpassRequestsSerialzer,StaffProfileSerializer,EntryExitDetailsSerializer,ManageStudentsSerializer
+from .serializers import OutpassRequestsSerialzer,StaffProfileSerializer,EntryExitDetailsSerializer,ManageStudentsSerializer
 from .models import entry_exit,student_profile
-from rest_framework import status
+from .permissions import IsStaff
+
+
+class StaffViewPermission(APIView):
+    permission_classes=[IsStaff]
+
 # this will fetch all the all the outpasses when we do a get request and on post we can delete and approve the outpass 
-class outpass_requests(APIView):
+class outpass_requests(StaffViewPermission):
     def get(self,request,format=None):
         staff_id=request.user.staff_profile.id
         staff=staff_profile.objects.get(id=staff_id)
@@ -64,20 +63,21 @@ class outpass_requests(APIView):
         else:
             try:
                 outpass=Outpass.objects.get(id=pk)
+                # send mail here
                 outpass.delete()
                 return Response({'success':'outpass deleted'})
             except:
                 return Response({'error':'outpass does not exist'})
 
 # this will be used to render the profile view
-class StaffProfileView(APIView):
+class StaffProfileView(StaffViewPermission):
     def get(self,request,format=None):
         user=request.user
         staff=staff_profile.objects.get(admin=user)
         staff=StaffProfileSerializer(staff).data
         return Response(staff)
     
-class OutpassesApproved(APIView):
+class OutpassesApproved(StaffViewPermission):
     def get(self,request,format=None):
         staff_id=request.user.staff_profile.id
         staff=staff_profile.objects.get(id=staff_id)
@@ -124,7 +124,7 @@ class OutpassesApproved(APIView):
         except:
             return Response({'error':'outpass not valid'})
         
-class OutpassStudentsOut(APIView):
+class OutpassStudentsOut(StaffViewPermission):
     def get(self,request,format=None):
         staff_id=request.user.staff_profile.id
         staff=staff_profile.objects.get(id=staff_id)
@@ -142,7 +142,7 @@ class OutpassStudentsOut(APIView):
         entryexitdetails=EntryExitDetailsSerializer(entryexitdetails,many=True).data
         return Response(entryexitdetails)
     
-class AddStudentsForOutpass(APIView):
+class AddStudentsForOutpass(StaffViewPermission):
     def get(self,request,format=None):
         students=student_profile.objects.all()
         students=ManageStudentsSerializer(students,many=True).data
@@ -161,7 +161,7 @@ class AddStudentsForOutpass(APIView):
             staff.students_fa.add(*students)
         return Response({'success':'students addded'})
     
-class StudentsUnderStaff(APIView):
+class StudentsUnderStaff(StaffViewPermission):
     def get(self,request,format=None):
         staff_id=request.user.staff_profile.id
         staff=staff_profile.objects.get(id=staff_id)
@@ -188,3 +188,19 @@ class StudentsUnderStaff(APIView):
             staff.students_fa.remove(student)
         return Response({'success':'successfully removed'})
 
+class SwitchStaffRole(APIView):
+    def post(self,request,format=None):
+        data=request.data['access']
+        data=data.split(",")
+        curr_role=request.user.staff_profile.role
+        role_list=['swc','fa','warden']
+        if (data[0] in role_list) and (data[1] in role_list): 
+            if data[0]==curr_role:
+                request.user.staff_profile.role=data[1]
+            else:
+                request.user.staff_profile.role=data[0]
+            request.user.staff_profile.save()
+            print(request.user.staff_profile.role)
+            return Response({'success':'switched to'+str(request.user.staff_profile.role)})
+        else:
+            return Response({'error':'wrong roles'})

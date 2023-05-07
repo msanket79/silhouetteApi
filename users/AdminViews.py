@@ -1,12 +1,6 @@
-from django.shortcuts import render
 from rest_framework.views import APIView
-from rest_framework import permissions
 from rest_framework.response import Response
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import ensure_csrf_cookie,csrf_exempt,csrf_protect
-from django.contrib.auth.models import User
-from django.contrib import auth
-from .serializers import AdminProfileSerializer,UserProfileSerializer,EntryExitDetailsSerializer,UnbanRequestsSerializer,CreateStudentSerializer,CreateSecuritySerializer,CreateStaffSerializer,ManageStudentsSerializer,ManageSecuritySerializer
+from .serializers import AdminProfileSerializer,EntryExitDetailsSerializer,UnbanRequestsSerializer,StudentSerializer,SecuritySerializer,CreateStaffSerializer,ManageStudentsSerializer,ManageSecuritySerializer,ManageStaffsSerializer
 from .models import admin_profile,customUser,entry_exit,student_profile,security_profile
 from .EmailBackend import EmailBackend
 from rest_framework import status
@@ -14,20 +8,21 @@ from outpass.models import staff_profile
 import os
 import pandas as pd
 from django.conf import settings
+from django.core.mail import send_mail
+from silhouette.settings import EMAIL_HOST_USER
+
+
 
 # this is used to render the admin profile 
 class GetAdminProfileView(APIView):
     def get(self,request,format=None):
         try:
             user=self.request.user
-            print(user)
             admin_profile1=admin_profile.objects.get(admin=user)
-            print(admin_profile1)
             admin_profile1=AdminProfileSerializer(admin_profile1).data
             return Response(admin_profile1)
-        except Exception as e:
-            print(e)
-        return Response({'error':'something went wrong while retreiving the admin profile'})    
+        except:
+            return Response({'error':'something went wrong while retreiving the admin profile'})    
         
 
 
@@ -37,9 +32,7 @@ class EntryExitDetails(APIView):
     def get(self,request,format=None):
         entry_exit_details=entry_exit.objects.all()
         entry_exit_details=EntryExitDetailsSerializer(entry_exit_details,many=True).data
-        print(entry_exit_details)
         return Response({'entry_exit':entry_exit_details},content_type='application/json')
-
 
 
 # this will be used show all the students who are out on the outpass
@@ -62,9 +55,31 @@ class UnbanRequests(APIView):
         roll_no=self.request.data['roll_no']
         student=student_profile.objects.get(roll_no=roll_no)
         try:
+
+
+
+
+
+
+
+
+
+
+
+
+            
+            subject="Unabanned"
+            message="love u baby u are unbanned"
+            recipient_list=['msanket79@gmail.com','mishra7999@gmail.com','21bcs129@iiitdwd.ac.in']
+            send_mail(subject,
+                      message,
+                      EMAIL_HOST_USER,
+                      recipient_list,fail_silently=True)
+            print('send mail worked')
             student.appeal_unban.delete()
         except:
             pass
+        print('yaha aaya')
         student.ban=False
         student.save()
         return Response({'success':'student unbanned successfully'})
@@ -73,7 +88,6 @@ class UnbanRequests(APIView):
 
 # this is used to delete the history of the entry exits in a range
 class DeleteHistory(APIView):
-    permission_classes=[permissions.AllowAny]
     def post(self,request,format=None):
         
         data=self.request.data
@@ -81,39 +95,78 @@ class DeleteHistory(APIView):
         to_date=data['to_date']
         password=data['password']
         email=self.request.user
-        # print(email)
         
         if EmailBackend.authenticate(self.request,username=email,password=password):
-            # ans=entry_exit.objects.filter(entry_time__gte=from_date,
-            #                 entry_time__lte=to_date).delete()
+            ans=entry_exit.objects.filter(entry_time__gte=from_date,
+                            entry_time__lte=to_date).delete()
             return Response({'success':'history deleted successfully'})
         else:
             return Response({'error':'password is not correct'})
         
 
 # this is used to create the profile of the student
-class UserAndStudentProfileCreate(APIView):
+class UserAndStudentProfileCRUD(APIView):
+    def get(self,request,pk):
+        student=student_profile.objects.get(id=pk)
+        student=StudentSerializer(student)
+        return Response(student)
     def post(self, request, format=None):
-        serializer = CreateStudentSerializer(data=request.data)
-        # print(request.data)
+        serializer = StudentSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
             return Response({"success":"created successfully"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def put(self,request,pk):
+        data=request.data
+        print(data)
+        instance=student_profile.objects.get(id=pk)
+        serializer=StudentSerializer(instance=instance,data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+    def delete(self,request,pk):
+        student=student_profile.objects.get(id=pk)
+        student.admin.delete()
+        student.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 
 # this is used to create the profile of the security
-class UserAndSecurityProfileCreate(APIView):
+class UserAndSecurityProfileCRUD(APIView):
     def post(self,request,format=None):
-        serializer=CreateSecuritySerializer(data=request.data)
+        serializer=SecuritySerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
             return Response({"user_id": user.id}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def get(self,request,pk):
+        security=security_profile.objects.get(id=pk)
+        security=SecuritySerializer(security).data
+        return Response(security)
+    def put(self,request,pk):
+        instance=security_profile.objects.get(id=pk)
+        serializer=SecuritySerializer(instance=instance,data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+    def delete(self,request,pk):
+        security=security_profile.objects.get(id=pk)
+        security.admin.delete()
+        security.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+
     
 
 # this is  used to create a staff profile -swc,fa,warden
 
-class UserAndStaffProfileCreate(APIView):
+class UserAndStaffProfileCRUD(APIView):
     def post(self,request,format=None):
         serializer=CreateStaffSerializer(data=request.data)
         if serializer.is_valid():
@@ -129,7 +182,11 @@ class ManageStudents(APIView):
         students=student_profile.objects.all()
         students=ManageStudentsSerializer(students,many=True).data
         return Response(students)
-    
+class ManageStaff(APIView):
+    def get(self,request,format=None):
+        staffs=staff_profile.objects.all()
+        staffs=ManageStaffsSerializer(staffs,many=True).data
+        return Response(staffs) 
 
 # this is to manage the list of security and edit and delete the security data
 class ManageSecurity(APIView):
@@ -138,17 +195,6 @@ class ManageSecurity(APIView):
         security_people=ManageSecuritySerializer(security_people,many=True).data
         return Response(security_people)
 
-# this is used to delete the student data
-class DeleteStudent(APIView):
-    def post(self,request,foramt=None):
-        id=request.data['id']
-        try:
-            student=student_profile.objects.get(id=id)
-            student.admin.delete()
-            student.delete()
-            return Response({'success':"successfully deleted the student"})
-        except:
-            return Response({'error':'some error occured'})
 # this is used to delete the security data
 class DeleteSecurity(APIView):
     def post(Self,reqquest,format=None):
@@ -184,7 +230,7 @@ class ban_student(APIView):
         student.save()
         return Response({'success':'student banned successfully'})
     
-
+# it is used to add students under an faculty 
 class AddStudentsForOutpass(APIView):
     def get(self,request,format=None):
         students=student_profile.objects.all()
@@ -221,7 +267,7 @@ class AddStudentsForOutpass(APIView):
             staff.students_warden.add(*students1)  
         return Response({'success':'students addded'})
 
-
+# this is used for bulk student registration
 class BulkStudentRegistration(APIView):
     def post(self,request,format=None):
         file1=request.FILES['file']

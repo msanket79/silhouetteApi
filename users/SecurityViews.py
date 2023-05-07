@@ -23,6 +23,10 @@ import os
 
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from .permissions import  IsSecurity
+from .models import appeal_unban
+class SecurityViewPermission(APIView):
+    permission_classes=[IsSecurity]
 
 def save_base64_image(base64_string, folder):
     # Decode base64 data
@@ -48,7 +52,7 @@ classifier=fc.classifier()
 
 
 # this is a security profile 
-class SecurityProfileView(APIView):
+class SecurityProfileView(SecurityViewPermission):
     def get(self,request,format=None):
         user=request.user
         security=security_profile.objects.get(admin=user)
@@ -56,7 +60,7 @@ class SecurityProfileView(APIView):
         return Response(security)
     
 #this is the listofstudents out
-class ListOfStudentsOutSerializer(APIView):
+class ListOfStudentsOutSerializer(SecurityViewPermission):
     def get(self,request,format=None):
         entryexitdetails=entry_exit.objects.filter(entry_time__isnull=True).filter(outpass__isnull=True)
         entryexitdetails=EntryExitDetailsSerializer(entryexitdetails,many=True).data
@@ -68,11 +72,11 @@ class ListOfStudentsOutSerializer(APIView):
 # if entry_type==manual then it will used for manual entry
 # if entry_type==face_accept then we have showed the details of the student after successfull recognition and then user is clicking sumbit
 # else it will process recieve the 10 images and will process it 
-class direct_entry(APIView):
+class direct_entry(SecurityViewPermission):
     def post(self,request,format=None):
         entry_type=request.data['entry_type']
+        # when we want to do entry using the roll no
         if entry_type=="manual":
-            print("manual me aaya")
             roll_no=request.POST["roll_no"].upper()
             try:
                 student=student_profile.objects.get(roll_no=roll_no)
@@ -80,8 +84,10 @@ class direct_entry(APIView):
                 return Response(student)
             except:
                 return Response({'error':'student not in db'})
+        # this is the page when face is scanned and i post a student details to frontend and they click on submit
         elif entry_type=="face_accept":
             roll_no=request.POST["roll_no"].upper()
+        # this is when the security clicks on the face entry and 10 photos are sent
         else:
             images = request.data.getlist('img')
             labels=classifier.testSVM(images)
@@ -103,15 +109,14 @@ class direct_entry(APIView):
 
         try:
             student=student_profile.objects.get(roll_no=roll_no)
-
             entryexit=entry_exit.objects.filter(roll_no=student).filter(entry_time__isnull=True).first()
-            query=(Q(roll_no=student) & Q(approved=True) & ~Q(used = True) & Q(From=datetime.datetime.now()+datetime.timedelta(hours=5,minutes=30)))
+            query=(Q(roll_no=student) & Q(approved=True) & ~Q(used = True) & Q(From=datetime.datetime.now()))
             outpass=Outpass.objects.filter(query).first()
 
 
             # agar student bahar hai with outpass
             if outpass and  outpass.used==False:
-                outpass.entry.entry_time=datetime.datetime.now()+datetime.timedelta(hours=5,minutes=30)
+                outpass.entry.entry_time=datetime.datetime.now()
                 
                 outpass.entry.save()
                 outpass.used=True
@@ -119,8 +124,7 @@ class direct_entry(APIView):
                 return Response({'success':'outpass entry done'})
              # direct entry exit
             elif  (not outpass) or entryexit :
-                
-                print(roll_no)
+
                 try:
                     student=student_profile.objects.get(roll_no=roll_no)
                     entryexit=entry_exit.objects.filter(roll_no=student).filter(entry_time__isnull=True).first()
@@ -128,17 +132,24 @@ class direct_entry(APIView):
 
                         if not student.ban:
                             entryexit1=entry_exit.objects.create(roll_no=student)
-                            entryexit1.exit_time=entryexit1.exit_time+datetime.timedelta(hours=5,minutes=30)
+                            entryexit1.exit_time=entryexit1.exit_time
                             entryexit1.save()
                             return Response({'success':'exit done'})
                         else:
                             return Response({'error':'student is banned'})
                     else:
-                        entryexit.entry_time=datetime.datetime.now()+datetime.timedelta(hours=5,minutes=30)
-                        print(entryexit)
+                        now=datetime.datetime.now()
+                        entryexit.entry_time=now
+                        # here we have to ban the students
+
+                        if now.time() > datetime.time(hour=21, minute=30):
+                            student.ban=True
+                            req=appeal_unban.objects.create(student_id=student,cause="Student was late and came to campus at "+str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')) )
+                            req.save()
                         entryexit.save()
                         return Response({'success':'entry done'})
-                except:
+                except Exception as e:
+                    print(e)
                     return Response({'error':'enter a valid roll no'})
             else:
                 # outpass or direct entry page render
@@ -150,7 +161,7 @@ class direct_entry(APIView):
 
 
 # this is the page will appear when the student want to exit adn he has outpass in his name and it will ask direct or outpass
-class direct_or_outpass(APIView):
+class direct_or_outpass(SecurityViewPermission):
     def post(self,request,format=None):
         roll_no=request.data["roll_no"].upper()
         exit_type=request.data['exit_type']

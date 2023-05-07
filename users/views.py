@@ -82,16 +82,7 @@ class LogoutView(APIView):
             return Response({"message": "Logout successful"}, status=status.HTTP_200_OK)
         except Exception as e:
             print(e)
-            return Response({'error':'logout error'})
-
-# class LogoutView(APIView):
-#     def post(self,request,format=None):
-#         try:
-#             auth.logout(request)
-#             return Response({'success':'logout success'})
-#         except:
-#             return Response({'error':'Something went wrong while logging out the user'})
-        
+            return Response({'error':'logout error'})      
         
 class change_password(APIView):
     def post(self,request,format=None):
@@ -110,25 +101,7 @@ class change_password(APIView):
             return Response({"error":"Please enter the correct password"})
         
 
-class SwitchStaffRole(APIView):
-    def post(self,request,format=None):
-        data=request.data['access']
-        data=data.split(",")
-        curr_role=request.user.staff_profile.role
-        role_list=['swc','fa','warden']
-        print(type(data))
-        print(data)
-        print(curr_role)
-        if (data[0] in role_list) and (data[1] in role_list): 
-            if data[0]==curr_role:
-                request.user.staff_profile.role=data[1]
-            else:
-                request.user.staff_profile.role=data[0]
-            request.user.staff_profile.save()
-            print(request.user.staff_profile.role)
-            return Response({'success':'switched to'+str(request.user.staff_profile.role)})
-        else:
-            return Response({'error':'wrong roles'})
+
             
 
 

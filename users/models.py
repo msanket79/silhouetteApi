@@ -29,8 +29,9 @@ class student_profile(models.Model):
     objects=models.Manager()
     admin=models.OneToOneField(customUser,on_delete=models.CASCADE)
 class appeal_unban(models.Model):
-    reason=models.TextField(max_length=1000)
+    reason=models.TextField(max_length=1000,null=True,blank=True)
     student_id=models.OneToOneField(student_profile,null=True,blank=True,on_delete=models.CASCADE)
+    cause=models.TextField(max_length=1000)
 
 class security_profile(models.Model):
     id=models.AutoField(primary_key=True)
