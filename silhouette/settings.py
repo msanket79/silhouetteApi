@@ -169,3 +169,6 @@ EMAIL_HOST_USER='igragnar79@gmail.com'
 EMAIL_HOST_PASSWORD='mefniingagffrdmg'
 EMAIL_USE_SSL=False
 
+from django.core.management.utils import get_random_secret_key
+SECRET_KEY=get_random_secret_key()
+

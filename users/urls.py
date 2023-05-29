@@ -10,38 +10,33 @@ from django.utils import timezone
 import datetime
 from django.core.mail import send_mail
 from silhouette.settings import EMAIL_HOST_USER
+from rest_framework.views import APIView
+from rest_framework import permissions
+from rest_framework.response import Response
 
-def demo(request):
-    subject = 'Regarding Gardes revaluation'
-    message = '''hey team silhoutte 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    movie kaisa hai popcorn chahiye kya'''
-    from_email = 'your_email@example.com'
-    recipient_list = ['21bcs049@iiitdwd.ac.in','21bcs135@iiitdwd.ac.in']
-    send_mail(subject, message,EMAIL_HOST_USER, recipient_list, fail_silently=False)
 
-    return render(request,'users/index.html')
+class demo(APIView):
+    permission_classes=[permissions.AllowAny]
+    def post(elf,request,format=None):
+        
+        # images = request.data.getlist('img')
+        # confidence=request.data['confidence']
+        # classifier.cosine_confidence=float(confidence)
+
+       
+        
+        #     return Response()
+        # ans=list(dict1.keys())
+        # print(ans[0])
+        ans=[]
+        return Response({'rn1':ans[0]})
     
 
 
 
 urlpatterns=[
     path('',views.LoginView.as_view(),name="login"),
-    path('demo/',demo,name="demo"),
+    path('demo/',demo.as_view(),name="demo"),
     path('logout/',views.LogoutView.as_view(),name="logout"),
     path('change_password/',views.change_password.as_view(),name="change_password"),
     path('authenticated/',views.checkAuthenticated.as_view(),name="authenticated"),

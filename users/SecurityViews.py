@@ -25,6 +25,15 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from .permissions import  IsSecurity
 from .models import appeal_unban
+import facial_classification as fc
+classifier=fc.classifier(login={
+    'host' : "localhost",
+    'dbname' : "silhouettedemo1",
+    'user' : "postgres",
+    'password' : "root",
+    'port' : 5432
+},liveness_check=False)
+
 class SecurityViewPermission(APIView):
     permission_classes=[IsSecurity]
 
@@ -46,8 +55,8 @@ def save_base64_image(base64_string, folder):
     return default_storage.url(path)+f'?t={int(time())}'
 
 
-import facial_classification as fc
-classifier=fc.classifier()
+# import facial_classification as fc
+# classifier=fc.classifier()
 
 
 
@@ -90,11 +99,20 @@ class direct_entry(SecurityViewPermission):
         # this is when the security clicks on the face entry and 10 photos are sent
         else:
             images = request.data.getlist('img')
-            labels=classifier.testSVM(images)
-            if len(labels)!=0:
-                print(labels[0])
+            # labels=classifier.testSVM(images)
+            # ret,data=classifier.checkQR(images[3])
+            print(images.__len__())
+            classifier.cosine_confidence=0.75
+            labels=classifier.test(images,k=5,verbose=True)
+            # if ret==True:
+            #     return Response({'qr':'accepted','rn':data})
+            # labels=list(dict1.keys())
+            # if len(labels)!=0:
+            if len(labels) > 0:
                 try:
-                    student=student_profile.objects.get(roll_no=labels[0].upper())
+                    print(labels)
+                    # print("type hai",type(labels))
+                    student=student_profile.objects.get(roll_no=labels.upper())
                     student=ScannedStudentSerializer(student).data
                     response=student
                     response['image']=save_base64_image(images[2],media_root)

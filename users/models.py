@@ -7,7 +7,6 @@ from django.db.models.signals import post_save
 
 # Create your models here.
 
-
 class customUser(AbstractUser):
 
     email = models.EmailField(unique=True)
@@ -28,6 +27,7 @@ class student_profile(models.Model):
     ban=models.BooleanField(null=True,blank=True,default=False)
     objects=models.Manager()
     admin=models.OneToOneField(customUser,on_delete=models.CASCADE)
+
 class appeal_unban(models.Model):
     reason=models.TextField(max_length=1000,null=True,blank=True)
     student_id=models.OneToOneField(student_profile,null=True,blank=True,on_delete=models.CASCADE)
